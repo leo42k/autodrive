@@ -1,5 +1,6 @@
 library("h5")
 library(imager)
+library(scales)
 # install.packages("h5", repos = "http://www.omegahat.org/R", type="source")
 # install.packages("/Users/leo42k/Downloads/h5_0.9.2.tgz", repos = NULL, type="source")
 log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
@@ -38,10 +39,14 @@ temp <- log[log_names[28]]@dim
 speed <- log[log_names[28]][1:temp]
 rm(temp)
 
-log_names[]
+temp <- log[log_names[36]]@dim
+angle <- log[log_names[36]][1:temp]
+rm(temp)
+angle <- rescale(angle, to = c(-1, 1))
+# using the deg/s2; is it appropriate? 
 
-hist(speed[50001:60000])
-hist(scale(speed[50001:60000]))
+image[image_names[1]]
+
 
 h5close(log)
 h5close(img)
