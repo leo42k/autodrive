@@ -14,6 +14,8 @@ image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
 log_names <- list.datasets(log, recursive = TRUE)
 image_names <- list.datasets(image, recursive = TRUE)
 
+image[image_names[1]]
+
 temp <- log[log_names[13]]@dim
 timeline_image <- log[log_names[13]][1:temp]
 rm(temp)
@@ -37,7 +39,7 @@ sum(accel > 0.8)
 sum(accel < -0.8)
 length(accel)
 
-accel.tri <- 1 * (accel > 0.8) - 1 * (accel < - 0.8)
+accel_tri <- 1 * (accel > 0.8) - 1 * (accel < - 0.8)
 # this is the "answer"
 
 
@@ -59,7 +61,7 @@ angle_accel <- rescale(angle_accel, to = c(-1, 1))
 
 
 set_train <- matrix(0, 10000, 31)
-set_train[,1] <- as.matrix(accel.tri[index_train])
+set_train[,1] <- as.matrix(accel_tri[index_train])
 for (i in 1:10) {
     set_train[,i + 1] <- speed[index_train-i*100]
     set_train[,i + 11] <- angle[index_train-i*100]
@@ -68,7 +70,7 @@ for (i in 1:10) {
 
 
 set_validation <- matrix(0, 5000, 31)
-set_validation[,1] <- as.matrix(accel.tri[index_validation])
+set_validation[,1] <- as.matrix(accel_tri[index_validation])
 for (i in 1:10) {
     set_validation[,i + 1] <- speed[index_validation-i*100]
     set_validation[,i + 11] <- angle[index_validation-i*100]
@@ -76,7 +78,7 @@ for (i in 1:10) {
 }
 
 set_test <- matrix(0, 5000, 31)
-set_test[,1] <- as.matrix(accel.tri[index_test])
+set_test[,1] <- as.matrix(accel_tri[index_test])
 for (i in 1:10) {
     set_test[,i + 1] <- speed[index_test-i*100]
     set_test[,i + 11] <- angle[index_test-i*100]
