@@ -1,0 +1,13 @@
+---
+title: "Data Structure and a Naive Model"
+author: "Zeyi Wang"
+date: "September 20, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
