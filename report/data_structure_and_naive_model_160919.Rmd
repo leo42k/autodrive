@@ -6,8 +6,29 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
+opts_knit$set(root.dir = "/Users/leo42k/Desktop/autodrive")
 ```
 
-## R Markdown
+## Data Structure
 
+45 GB compressed, 80 GB uncompressed (unzip it in Windows 10, not Mac OS)
+
+```{r list.files}
+list.files(file.path("comma-dataset"), recursive = T)
+```
+
+We will need 'h5' package to extract data from *.h5 files. 
+
+```{r h5 package}
+library("h5")
+log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
+image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
+log_names <- list.datasets(log, recursive = TRUE)
+image_names <- list.datasets(image, recursive = TRUE)
+```
+
+So the function insists that I am deprecating it. Well. 
+
+### Image Data

@@ -1,6 +1,11 @@
 library("h5")
 library(imager)
 library(scales)
+library(randomForest)
+library(abind)
+library(arrayhelpers)
+# install.packages("arrayhelpers")
+# install.packages("randomForest")
 # install.packages("h5", repos = "http://www.omegahat.org/R", type="source")
 # install.packages("/Users/leo42k/Downloads/h5_0.9.2.tgz", repos = NULL, type="source")
 log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
@@ -35,17 +40,56 @@ length(accel)
 accel.tri <- 1 * (accel > 0.8) - 1 * (accel < - 0.8)
 # this is the "answer"
 
+
 temp <- log[log_names[28]]@dim
 speed <- log[log_names[28]][1:temp]
 rm(temp)
 
-temp <- log[log_names[36]]@dim
-angle <- log[log_names[36]][1:temp]
+temp <- log[log_names[35]]@dim
+angle <- log[log_names[35]][1:temp]
 rm(temp)
-angle <- rescale(angle, to = c(-1, 1))
+angle <- scale(angle)
+
+
+temp <- log[log_names[36]]@dim
+angle_accel <- log[log_names[36]][1:temp]
+rm(temp)
+angle_accel <- rescale(angle_accel, to = c(-1, 1))
 # using the deg/s2; is it appropriate? 
 
-image[image_names[1]]
+
+set_train <- matrix(0, 10000, 31)
+set_train[,1] <- as.matrix(accel.tri[index_train])
+for (i in 1:10) {
+    set_train[,i + 1] <- speed[index_train-i*100]
+    set_train[,i + 11] <- angle[index_train-i*100]
+    set_train[,i + 21] <- angle_accel[index_train-i*100]
+}
+
+
+set_validation <- matrix(0, 5000, 31)
+set_validation[,1] <- as.matrix(accel.tri[index_validation])
+for (i in 1:10) {
+    set_validation[,i + 1] <- speed[index_validation-i*100]
+    set_validation[,i + 11] <- angle[index_validation-i*100]
+    set_validation[,i + 21] <- angle_accel[index_validation-i*100]
+}
+
+set_test <- matrix(0, 5000, 31)
+set_test[,1] <- as.matrix(accel.tri[index_test])
+for (i in 1:10) {
+    set_test[,i + 1] <- speed[index_test-i*100]
+    set_test[,i + 11] <- angle[index_test-i*100]
+    set_test[,i + 21] <- angle_accel[index_test-i*100]
+}
+
+
+model_temp <- randomForest(set_train[,2:31], as.factor(set_train[,1]))
+
+sum(predict(model_temp, set_validation[,2:31]) == set_validation[,1])
+sum(predict(model_temp, set_test[,2:31]) == set_test[,1])
+
+
 
 
 h5close(log)
