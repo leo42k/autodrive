@@ -2,7 +2,49 @@ library("h5")
 library(imager)
 # install.packages("h5", repos = "http://www.omegahat.org/R", type="source")
 # install.packages("/Users/leo42k/Downloads/h5_0.9.2.tgz", repos = NULL, type="source")
+log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
+image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
 
+log_names <- list.datasets(log, recursive = TRUE)
+image_names <- list.datasets(image, recursive = TRUE)
+
+temp <- log[log_names[13]]@dim
+timeline_image <- log[log_names[13]][1:temp]
+rm(temp)
+
+set.seed(160920)
+index_train <- sample(50001:65000, size = 10000)
+index_validation <- setdiff(50001:65000, index_train)
+length(index_train)
+length(index_validation)
+index_test <- 70001:75000
+# no validatiindex_trainon; risk of over-fitting
+# but this type of quesions usually cause under-fitting
+
+temp <- log[log_names[14]]@dim
+accel <- log[log_names[14]][1:temp]
+rm(temp)
+
+range(accel)
+hist(accel, breaks = 100)
+sum(accel > 0.8)
+sum(accel < -0.8)
+length(accel)
+
+accel.tri <- 1 * (accel > 0.8) - 1 * (accel < - 0.8)
+# this is the "answer"
+
+temp <- log[log_names[28]]@dim
+speed <- log[log_names[28]][1:temp]
+rm(temp)
+
+log_names[]
+
+hist(speed[50001:60000])
+hist(scale(speed[50001:60000]))
+
+h5close(log)
+h5close(img)
 
 
 
@@ -11,12 +53,15 @@ library(imager)
 90870/18177
 18177/20/60/60
 
-data <- H5File("/Users/leo42k/Desktop/autodrive/comma-dataset/camera/2016-06-08--11-46-01.h5")
-names <- list.datasets(data, recursive = TRUE)
-names
+10000-16000
+50000-80000
 
-x <- data[names[1]]
+
+
+x <- data[names[13]]
 x@dim
+x[50000]
+x[80000]
 range(x[1:90870])
 x[20000:20080]
 x <- data[names[1]]
@@ -55,4 +100,3 @@ plot(as.cimg(testmap))
 ?as.cimg
 
 
-h5close(data)
