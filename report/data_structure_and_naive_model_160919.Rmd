@@ -11,6 +11,12 @@ knitr::opts_chunk$set(echo = TRUE)
 opts_knit$set(root.dir = "/Users/leo42k/Desktop/autodrive")
 ```
 
+## 0. Quantitative question
+
+- Can we design a self-driving car?
+
+- Can we predict the appropriate acceleration and steering angle based on data collected by the camera and GPS, such as speed, acceleration, steering angle and camera images?
+
 ## 1. Data Structure
 
 45 GB compressed, 80 GB uncompressed (unzip it in Windows 10, not Mac OS)
