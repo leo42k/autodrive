@@ -8,7 +8,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
-opts_knit$set(root.dir = "/Users/leo42k/Desktop/autodrive")
+opts_knit$set(root.dir = "..")
 ```
 
 ## 0. Quantitative question
