@@ -16,6 +16,14 @@ image_names <- list.datasets(image, recursive = TRUE)
 
 image[image_names[1]]
 
+log_names
+k<-7
+log_names[k]
+dim(log[log_names[k]])
+head(log[log_names[k]])
+log[log_names[k]][1:10,]
+
+
 temp <- log[log_names[13]]@dim
 timeline_image <- log[log_names[13]][1:temp]
 rm(temp)
