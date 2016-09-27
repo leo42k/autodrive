@@ -247,7 +247,7 @@ In addition, we will need to predict acceleration and steering angle in the end.
 - A slightly improved model with images involved
 
 ```{r}
-M <- aperm(image[image_names][13001,,,], c(4,3,1,2))
+M <- aperm(image[image_names][10000,,,], c(4,3,1,2))
 MM <- M[,,1,1]>=235
 MMM <- M
 for (i in 1:3) {

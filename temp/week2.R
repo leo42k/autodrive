@@ -18,7 +18,7 @@ par(mfrow = c(2, 2))
 plot(as.cimg(aperm(image[image_names][10001,,,], c(4,3,1,2))))  #the start of training set
 plot(as.cimg(aperm(image[image_names][13001,,,], c(4,3,1,2))))  #the end of training set
 plot(as.cimg(aperm(image[image_names][14002,,,], c(4,3,1,2))))  #the start of test set
-plot(as.cimg(aperm(image[image_names][15002,,,], c(4,3,1,2))))  #the end of test set
+plot(as.cimg(aperm(image[image_names][7002,,,], c(4,3,1,2))))  #the end of test set
 par(mfrow = c(1, 1))  
 
 log_names
@@ -67,99 +67,182 @@ range(timeline_image)
 
 hist(accel_tri)
 
+library(MASS)
 
 
+get.angle(12000)
 
 
-
-
+get.angle <- function(k) {
+temp.M <- image[image_names][k,,,]
+# temp.MM <- (0.212671*temp.M[1,1,,]+0.715160*temp.M[1,2,,]+0.072169*temp.M[1,3,,]>240)
+temp.MM <- t((temp.M[1,1,,]>180)&(temp.M[1,2,,]>180)&(temp.M[1,3,,]>180))
+# temp.MM <- t(as.matrix(temp.MM))
+temp1 <- which(temp.MM[1:160,] == 1, arr.ind = T)
+temp2 <- which(temp.MM[161:320,] == 1, arr.ind = T)
+rm(temp.MM, temp.M)
+if (length(unique(temp1[,1])) > 1 ) {
+    c1 <- coef(fastLmPure(cbind(1,temp1[,1]),temp1[,2]))[2]
+} else {
+    c1 <- 1
+}
+if (length(unique(temp2[,1])) > 1 ) {
+    c2 <- coef(fastLmPure(cbind(1,temp2[,1]),temp2[,2]))[2]
+} else {
+    c2 <- 1
+}
+rm(temp1, temp2)
+return(c(c1, c2))
+}
 
 
 **Acceleration status** ~ 10sec **speed** + 10sec **steering angle** + 10sec **angle acceleration**
+**angle** ~ 10 sec c1 + 10 sec c2
     
-    ### 2.1 Training, Validation and Testing set
-    
-    ```{r}
-set.seed(160920)
+        
+set.seed(160926)
 index_train <- sample(50001:65000, size = 10000)
 index_validation <- setdiff(50001:65000, index_train)
 index_test <- 70001:75000
 
-set_train <- matrix(0, 10000, 31)
-set_train[,1] <- as.matrix(accel_tri[index_train])
-for (i in 1:10) {
-    set_train[,i + 1] <- speed[index_train-i*100]
-    set_train[,i + 11] <- angle[index_train-i*100]
-    set_train[,i + 21] <- angle_accel[index_train-i*100]
+length(index_train)
+length(index_validation)
+length(index_test)
+
+
+set_train <- matrix(0, length(index_train), 11)
+set_train[,1] <- as.matrix(angle_accel[index_train])
+for (j in 1:length(index_train)){
+    for (i in 1:5) {
+        here <- get.angle(timeline_image[index_train[j]-i*100])
+        set_train[j,i + 1] <- here[1]
+        set_train[j,i + 6] <- here[2]
+    }
+}
+
+library(RcppArmadillo)
+
+set_validation <- matrix(0, length(index_validation), 11)
+set_validation[,1] <- as.matrix(angle_accel[index_validation])
+
+for (j in 1:length(index_validation)){
+    for (i in 1:5) {
+        here <- get.angle(timeline_image[index_validation[j]-i*100])
+        set_validation[j,i + 1] <- here[1]
+        set_validation[j,i + 6] <- here[2]
+    }
+}
+
+set_test <- matrix(0, length(index_test), 11)
+set_test[,1] <- as.matrix(angle_accel[index_test])
+for (j in 1:length(index_test)){
+    for (i in 1:5) {
+        here <- get.angle(timeline_image[index_test[j]-i*100])
+        set_test[j,i + 1] <- here[1]
+        set_test[j,i + 6] <- here[2]
+    }
 }
 
 
-set_validation <- matrix(0, 5000, 31)
-set_validation[,1] <- as.matrix(accel_tri[index_validation])
-for (i in 1:10) {
-    set_validation[,i + 1] <- speed[index_validation-i*100]
-    set_validation[,i + 11] <- angle[index_validation-i*100]
-    set_validation[,i + 21] <- angle_accel[index_validation-i*100]
-}
+saveRDS(set_train, file.path("temp", "set_train_angle.rds"))
+saveRDS(set_validation, file.path("temp", "set_validation_angle.rds"))
+saveRDS(set_test, file.path("temp", "set_test_angle.rds"))
 
-set_test <- matrix(0, 5000, 31)
-set_test[,1] <- as.matrix(accel_tri[index_test])
-for (i in 1:10) {
-    set_test[,i + 1] <- speed[index_test-i*100]
-    set_test[,i + 11] <- angle[index_test-i*100]
-    set_test[,i + 21] <- angle_accel[index_test-i*100]
-}
-```
 
-### 2.2 Fitting with random forests
-
-```{r, message=FALSE}
 library(randomForest)
-model_naive <- randomForest(set_train[,2:31], as.factor(set_train[,1]))
+# train <- data.frame(y = set_train[,1], x = set_train[,2:11])
+# validation <- data.frame(y = set_validation[,1], x = set_validation[,2:11])
+# test <- data.frame(y = set_test[,1], x = set_test[,2:11])
+model <- randomForest(set_train[,2:11], set_train[,1])
 
-sum(predict(model_naive, set_validation[,2:31]) == set_validation[,1])/5000  #validation
-sum(predict(model_naive, set_test[,2:31]) == set_test[,1])/5000  #test
-```
+# model <- lm(y~., train)
+# mean((predict(model, validation) - validation[,1])^2)
+# mean((predict(model, test) - test[,1])^2)
+# mean((predict(model, train) - train[,1])^2)
 
-The validation set is contaminated. 
+sqrt(mean((predict(model, set_validation[,2:11]) - set_validation[,1])^2) )  #validation MSE
+sqrt(mean((set_validation[,1])^2))
 
-```{r}
-sum(predict(model_naive, set_test[set_test[,1] == 0 ,2:31]) == set_test[set_test[,1] == 0 ,1])/sum(set_test[,1] == 0)
-sum(predict(model_naive, set_test[set_test[,1] == 1 ,2:31]) == set_test[set_test[,1] == 1 ,1])/sum(set_test[,1] == 1)
-sum(predict(model_naive, set_test[set_test[,1] == -1 ,2:31]) == set_test[set_test[,1] == -1 ,1])/sum(set_test[,1] == -1)
-```
+hist(predict(model, set_validation[,2:11]) )
+hist(predict(model, set_test[,2:11]) )
 
-So we can see that the image data is needed. 
+sqrt(mean((predict(model, set_test[,2:11]) - set_test[,1])^2) )  #test MSE
+mean(set_test[,1])
 
-## 3. Plan this week
+hist(set_validation[,1])
+hist(set_test[,1])
 
-The project is difficult in two meanings: 
-    
-    - We need to deal with image data;
-- Convolutional learning is always difficult.
 
-In addition, we will need to predict acceleration and steering angle in the end. 
 
-#### Tasks:
 
-- Example codes for angle prediction; visualizing the results
 
-- Simple ideas for image data: stamping out by grid regions; outlier detection
+set_train <- readRDS(file.path("temp", "set_train_angle.rds"))
+set_validation <- readRDS(file.path("temp", "set_validation_angle.rds"))
+set_test <- readRDS(file.path("temp", "set_test_angle.rds"))
 
-- Papers regarding convolutional learning
 
-- A slightly improved model with images involved
 
-```{r}
-M <- aperm(image[image_names][13001,,,], c(4,3,1,2))
-MM <- M[,,1,1]>=235
-MMM <- M
-for (i in 1:3) {
-    MMM[,,1,i] <- MM*M[,,1,i]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+set.seed(160926)
+index_train <- sample(50001:65000, size = 10000)
+index_validation <- setdiff(50001:65000, index_train)
+index_test <- 70001:75000
+
+length(index_train)
+length(index_validation)
+length(index_test)
+
+
+set_train <- matrix(0, length(index_train), 11)
+set_train[,1] <- as.matrix(angle_accel[index_train])
+for (j in 1:length(index_train)){
+    for (i in 1:5) {
+        here <- get.angle(timeline_image[index_train[j]-i*100])
+        set_train[j,i + 1] <- here[1]
+        set_train[j,i + 6] <- here[2]
+    }
 }
-plot(as.cimg(MMM))
-plot(as.cimg(M))
-```
 
-- Angle prediction could be easier
-- Any data on distance to the car in front?
+library(RcppArmadillo)
+
+set_validation <- matrix(0, length(index_validation), 11)
+set_validation[,1] <- as.matrix(angle_accel[index_validation])
+for (j in 1:length(index_validation)){
+    for (i in 1:5) {
+        here <- get.angle(timeline_image[index_validation[j]-i*100])
+        set_validation[,i + 1] <- here[1]
+        set_validation[,i + 6] <- here[2]
+    }
+}
+
+set_test <- matrix(0, length(index_test), 11)
+set_test[,1] <- as.matrix(angle_accel[index_test])
+for (j in 1:length(index_test)){
+    for (i in 1:5) {
+        here <- get.angle(timeline_image[index_test[j]-i*100])
+        set_test[,i + 1] <- here[1]
+        set_test[,i + 6] <- here[2]
+    }
+}
+
+model <- randomForest(set_train[,2:11], set_train[,1])
+mean((predict(model, set_validation[,2:11]) - set_validation[,1])^2)  #validation MSE
+mean((predict(model, set_test[,2:11]) - set_test[,1])^2)  #test MSE
+
+hist(set_validation[,1])
+hist(set_test[,1])
+
+
