@@ -11,6 +11,12 @@ log_names <- list.datasets(log, recursive = TRUE)
 image_names <- list.datasets(image, recursive = TRUE)
 image[image_names]  #check the image we loaded
 
+temp <- log[log_names[37]]
+temp[1:10,]
+
+range(log[log_names[40]][1:20000,])
+4095*2
+
 range(image[image_names][1,,,])
 
 library(imager)
