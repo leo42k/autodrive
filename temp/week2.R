@@ -11,8 +11,9 @@ log_names <- list.datasets(log, recursive = TRUE)
 image_names <- list.datasets(image, recursive = TRUE)
 image[image_names]  #check the image we loaded
 
-temp <- log[log_names[37]]
-temp[1:10,]
+log_names
+temp <- log[log_names[39]]
+temp[15000:16000,]
 
 range(log[log_names[40]][1:20000,])
 4095*2
