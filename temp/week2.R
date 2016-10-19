@@ -1,12 +1,11 @@
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # this is for local running; delete it for cluster file
 setwd("..")  #always keep thes
+getwd()
     
-list.files(file.path("comma-dataset"), recursive = T)
-
 library("h5")
-log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
-image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
+log <- h5file(file.path("comma-dataset", "log", "2016-05-12--22-20-00.h5"))
+image <- h5file(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
 log_names <- list.datasets(log, recursive = TRUE)
 image_names <- list.datasets(image, recursive = TRUE)
 image[image_names]  #check the image we loaded
@@ -22,6 +21,11 @@ range(image[image_names][1,,,])
 
 library(imager)
 par(mfrow = c(2, 2))  
+
+library(animation)
+saveGIF(for (i in seq(1, 10000, 100)) plot(as.cimg(aperm(image[image_names][i,,,], c(4,3,1,2)))), "test.gif", interval = 0.1)
+?saveGIF
+
 plot(as.cimg(aperm(image[image_names][10001,,,], c(4,3,1,2))))  #the start of training set
 plot(as.cimg(aperm(image[image_names][13001,,,], c(4,3,1,2))))  #the end of training set
 plot(as.cimg(aperm(image[image_names][14002,,,], c(4,3,1,2))))  #the start of test set
