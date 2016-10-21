@@ -165,3 +165,6 @@ points(point[1]+0.5, point[2], pch = 19, col = "blue")
 ```
 
 # Visualization
+
+[test](https://www.youtube.com/watch?v=E4DUmLJFs_c&feature=youtu.be)
+[train](https://www.youtube.com/watch?v=p2RmdN7Chl0&feature=youtu.be)
