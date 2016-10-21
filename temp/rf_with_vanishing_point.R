@@ -134,3 +134,7 @@ plot(as.cimg(aperm(image[image_names][k,,,], c(4,3,1,2))))
 draw_path_on(speed_ms = set_train[i, 2], angle_steers = set_train[i,1], color = "blue")
 draw_path_on(speed_ms = set_train[i, 2], angle_steers = predicted.angle.train[i], color = "green")
 points((set_train[i,3] + 0.5) * 320, 160 - ((set_train[i,4] + 0.5) * 320 - 160), col = "red", pch=19, cex=1.5)
+
+
+write.bib(entry = x, file = "test.bib")
+x <- citation("randomForest")

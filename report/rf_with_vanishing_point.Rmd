@@ -2,7 +2,7 @@
 title: "rf_with_vanishing_point"
 author: "Zeyi Wang"
 date: "October 21, 2016"
-output: html_document
+output: pdf_document
 ---
 
 
