@@ -293,3 +293,9 @@ saveVideo(for (i in 1:length(index_train)) {
 }, "train.mp4", interval = 0.05)
 
 ```
+
+
+# Visualization
+
+[test](https://www.youtube.com/watch?v=E4DUmLJFs_c&feature=youtu.be)
+[train](https://www.youtube.com/watch?v=p2RmdN7Chl0&feature=youtu.be)
