@@ -39,6 +39,9 @@ rm(temp)
 index_train <- 11000:13000
 index_test <- 13001:14400
 
+
+
+
 length(index_train)
 length(index_test)
 
@@ -75,7 +78,8 @@ for (i in 1:length(index_train)) {
     
 }
 record <- NULL
-for (i in 1:length(index_test)) {
+length(index_test)
+for (i in 1:15) {
     k <- index_test[i]
     point <- get.vanishing.point(k)
     record <- rbind(record, point)
@@ -92,6 +96,12 @@ for (i in 1:length(index_test)) {
     }
 }
 
+
+
+resulttemp <- dlmFilter(record[,1], dlmModPoly())
+
+plot(resulttemp$m[-1,1], type = "l")
+points(record[,1])
 # saveRDS(set_train, file.path("temp", "set_train.rds"))
 # saveRDS(set_test, file.path("temp", "set_test.rds"))
 
@@ -99,15 +109,37 @@ set_train <- readRDS(file.path("temp", "set_train.rds"))
 set_test <- readRDS(file.path("temp", "set_test.rds"))
 model <- readRDS(file.path("temp", "model.rds"))
 
+
+
 # model <- randomForest(set_train[,2:4], set_train[,1])
 mean((predict(model, set_train[,2:4]) - set_train[,1])^2)  #validation MSE
 mean((predict(model, set_test[,2:4]) - set_test[,1])^2)  #test MSE
 
+mean(angle[index_train])
+sd(angle[index_train])
+mean(angle[index_test])
+sd(angle[index_test])
+
+sqrt(25.51)
+sqrt(4.46)
+
+
 # saveRDS(model, file.path("temp", "model.rds"))
+
+importance(model)
+
+hist(angle)
+sd(angle[index_train])
+sd(angle[index_test])
 
 
 predicted.angle <- predict(model, set_test[,2:4])
 predicted.angle.train <- predict(model, set_train[,2:4])
+
+sum((predicted.angle > 0) * 1 == (angle[index_test] > 0) *1 ) / length(predicted.angle)
+sum((predicted.angle.train > 0) * 1 == (angle[index_train] > 0) *1 ) / length(predicted.angle.train)
+
+
 
 
 saveVideo(for (i in 1:length(index_test)) {
@@ -127,6 +159,7 @@ saveVideo(for (i in 1:length(index_train)) {
 }, "train.mp4", interval = 0.05)
 
 
+title("Visualization")
 
 i <- 595
 k <- index_train[i]

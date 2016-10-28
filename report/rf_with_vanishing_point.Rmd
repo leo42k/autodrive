@@ -111,7 +111,7 @@ The image is then tranformed into greyscale so that we could filter for markings
 i <- 595
 k <- index_train[i]
 image_use <- (as.cimg(aperm(image[image_names][k,,,], c(4,3,1,2))))
-result <- edges( make.image(image_use[,160:1,1,]), type = "Sobel")
+result <- edges( make.image(image_use[,160:1,1,]), type = "Robertcross")
 result <- rgb2grey(result)
 plot(image_use)
 show.image(result)
@@ -133,8 +133,8 @@ temp <- which(temp.MM == 1, arr.ind = T)
 To get robust vanishing point estimation, we first apply hough transformation to left/right part of the preprocessed image, seperately. 
 
 ```{r echo=FALSE}
-temp1 <- temp[(temp[,2] > 25)&(temp[,1] <=160), ]
-temp2 <- temp[(temp[,2] > 25)&(temp[,1] >160), ]
+temp1 <- temp[(temp[,2] <= 135)&(temp[,1] <=160), ]
+temp2 <- temp[(temp[,2] <= 135)&(temp[,1] >160), ]
 P <- matrix(0, 320, 320)
 P[temp1] <- 1
 getLineHough_plot(P)
@@ -152,7 +152,8 @@ p <- P
 length.row <- nrow(p)
 abc=hough(p)
 houghParam<-unlist(abc$Header)
-image(p,main="original")
+image(p,main="original", col = gray(c(0, 1)))
+
 P1 <- matrix(0, 320, 320)
 P1[temp1] <- 1
 getLineHough_plotline(P1)
