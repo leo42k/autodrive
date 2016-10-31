@@ -182,6 +182,19 @@ result <- rgb2grey(result)
 plot(image_use)
 show.image(result)
 
+
+refren <- rgb2grey(make.image(image_use[,160:1,1,]))
+matrixA <- extract.image(refren)
+install.packages("spatialfil")
+library(spatialfil)
+
+applyFilter(matrixA, C)
+
+Bx <- matrix(c(1,0,0,-1), 2,2)
+Bx
+
+C <- matrix(c(1,0,1,2,0,-2,1,0,1), 3, 3)
+
 temp.M <- extract.image(result)
 temp.MM <- (temp.M > quantile(temp.M, 0.97))*1
 temp.MM[,135:160] <- 0

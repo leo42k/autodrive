@@ -39,15 +39,23 @@ The techniques of self-driving vehicles have been rapidly developed recently by 
 \cite{comma.ai} 
 uses mainly video data to mimic human drivers by 
 training a conditional Recurrent Neural Network for transition model. 
-One of the challenges is the computational efficiency needed for real-time reaction to the collected data including the complex data from space or vision sensors. 
 
-This paper presents a simple robust method for vanishing point detection using video data and evaluates its role as a steering angle predictor using random forest algorithm. The method helps simplify the video processing and as well provides important reference for driving direction. A potentially more efficient self-driving model could be built in the future based on its prediction results. 
+Although comma.ai claims that a well designed deep learning algorithm will be able to completely mimic human driving -- using only image data, we argue that it might not be able to achieve the optimal results. There are at least two more features that human can take advantage of but a camera cannot. Moving parallax allows human to estimate distance by slightly moving their heads since the closer objects moving faster on the retina. Additionally, human actually have stereo vision from two eyes which is benefitial for distance estimation. Therefore using solely video data -- no matter how advanced the algorithm is -- must have a limit in accuracy of mimicing human drivers whereas an ultimate self-driving car has very little tolerance for error in many circumstances. 
+
+Besides, there is another main challenge of the computational efficiency needed for real-time reaction to the collected data including the complex data from space or vision sensors. 
+
+Therefore, instead of spending all effort in image processing, we attempt to simplify the image processing by finding computationally inexpensive predictors for human driving behaviors, such as steering angle and acceleration. Such simplification might allow the spare computational power to be used for other elements of the driving model. 
+
+This paper presents a simple robust method for vanishing point detection using video data and evaluates its role as a steering angle predictor using random forest algorithm. The method helps simplify the video processing and as well provides important reference for driving direction. 
+
+In a potential integrated self-driving system, the current model could serve as the main tool for following traffic. In the future, it will be equipped with an immediate reponse system processing emergent information such as important traffic signs or lanes detected, route instructions received from gps, or signals received from a collision advoidance system. For the ultimate goal of autonomous cars, an artifitial intelligence system will be trained by 3D lidar data and accurately recognized lane marking information for more arbitrary decisions such as optional lane changes and acceleration. 
+
 
 \section*{Data Sources}
 
-The dataset we uses was published by comma.ai on its GitHub repository in July 2016. We downloaded it on September 17, 2016 using the get\_data.sh code shared by comma.ai. 
+The dataset we use was published by comma.ai on its GitHub repository in July 2016. We downloaded it on September 17, 2016 using the get\_data.sh code shared by comma.ai. 
 
-The dataset consists of 10 clips of videos at 20Hz and the 10 log files at 100Hz of measurements including speed, acceleration, steering angle, gps,  data collected by lidar, etc. 
+The dataset contains 11 clips of videos at 20Hz recorded on different dates and times by a camera in the front of an Acura ILX 2016 controlled by human drivers. Each of the videos is equipped with a log file of driving records on important measurements such as acceleration and steering angle, at 100Hz. There are also 3D lidar measurements and GPS information available in the log files for future developments. 
 
 \section*{Methods}
 
@@ -55,32 +63,83 @@ The dataset consists of 10 clips of videos at 20Hz and the 10 log files at 100Hz
 
 All the video files consist of frames of $320$ by $160$ RGB images and are stored as $n\times 3\times 320 \times 160$ four dimensional arrays. 
 
-The log data is merged with respect to the time line of video files so that the merged video and log data will both be at 20Hz. 
+The log data containing speed and steering angle records is merged with respect to the time line of video files so that the merged video and log data will both be at 20Hz. 
 
-\subsection*{Dynamic lane markings detection}
+For this project, we mainly focus on a subset of a daytime driving record starting at 11:46:01 on June 8th, 2016. We use the video, speed and steering angle records of this subset to train and test both the prediction models for vanishing points and steering angles. We will not need a larger subset for training because the proposed model is relatively simple so that a small subset could be sufficient for fitting. 
 
-The lane markings are detected for the videos with the use of dynamic thresholds so that the detection could be robust against different lighting conditions. 
+We also use some images from a nighttime driving record starting at 21:32:47 on Feburary 11th, 2016 for preliminary tests on the robustness  of the vanishing point prediction model (Figure \ref{fig:Figure 1}). For the prediction model of steering angle, we currently focus on the daytime driving conditions. 
 
-Each frame of the video of interest, which is a $320$ by $160$ RGB image, is converted into grayscale. It is then transformed by a Roberts cross operator, which is one of the common edge detectors. A $97\%$ quantile threshold is applied to the transformed image data to get the detected lane markings. The detected markings are stored in a $320$ by $160$ matrix of $\{0, 1\}$ values. 
+
+\subsection*{Grayscale images}
+
+Each frame of the video of interest, which is a $320$ by $160$ RGB image, is converted into grayscale. We denote the grayscale image as matrix 
+$X = \{x_{ij}\}$, $i = 1, \cdots, 320$, $j = 1, \cdots, 160$. 
+
+\subsection*{Roberts cross filtering}
+
+The Roberts cross operator is applied to $X$ for edge detection. We first convolve $X$ with kernals $G_x = 
+\begin{bmatrix}
+1 & 0 \\
+0 & -1 \\
+\end{bmatrix}
+$ 
+and $G_y = 
+\begin{bmatrix}
+0 & 1 \\
+-1 & 0 \\
+\end{bmatrix}
+$. Denote the convolved images as 
+$$G_x(i, j) = x_{i, j} - x_{i+1, j+1}
+$$
+$$G_y(i, j) = - x_{i, j+1} + x_{i+1, j}
+$$, $i = 1, \cdots, 320$, $j = 1, \cdots, 160$. Then we get the gradient 
+$G(i, j) = \sqrt{G_x(i,j)^2 + G_y(i,j)^2}$ and the direction of the gradient $\sigma(i,j) = \arctan (\frac{G_y(i,j)}{G_x(i,j)})$ for each pixel $(i,j) \in \{1, \cdots, 320\} \times \{1, \cdots, 160\}$. Furthermore,  we use approximation 
+$|G(i, j)| \approx |G_x(i,j)| + |G_y(i,j)|$ for absolute values to get faster computation. Finally, the magnitudes of gradients $G = \{G(i, j): (i, j) \in \{1, \cdots, 320\} \times \{1, \cdots, 160\} \}$ at all pixels produce a filtered image containing detected edges. 
 
 We use Roberts cross operator mostly because it is computationally inexpensive and usually faster than other edge detectors. It is also because we do not need more accurate lane markings for the next step of getting vanishing point. 
 
+\subsection*{Dynamic lane markings detection}
+
+A $97\%$ quantile threshold is then applied to the transformed image 
+$G= \{G(i, j): (i, j) \in \{1, \cdots, 320\} \times \{1, \cdots, 160\} \}$ to detect lane markings. We stored the detected lane markings as $D = \{d_{ij}\}$ a $320$ by $160$ matrix of $\{0, 1\}$ values. 
+
 The $97\%$ threshold is rather arbitrary for the similar consideration of computational efficiency and the tolerence for slightly lower accuracy. But we do prefer a dynamic quantile threshold that could vary as lightness changes rather than a static threshold. The benefit of such dynamic threshold should allow robust lane marking detection against the different lighting conditons. 
 
-\begin{figure}[!ht]
+\begin{figure}[!ht] 
   \centering
       \includegraphics[width=0.9\textwidth]{Rplot1.png} 
-  \caption{\textit{Dynamic 97\% quantile threshold} handles different lighting conditions}
+  \caption{ \textit{Dynamic 97\% quantile thresholding} after \textit{Roberts cross filtering} handles different lighting conditions for lane markings detection. From left to right, figures are the original image, filtered image by Roberts cross operator (the edge detector) based on greyscale image (omitted) and the 97\% quantile thresholded image for lane markings. The first and the second rows process a daytime image and a nighttime image seperately. }
+  \label{fig:Figure 1}
 \end{figure}
+
+
+
+\subsection*{Hough Transformation}
+
+We then collect line segments from detected lane markings $D$.  Hough transformation, as one of the typical tools for line identification, is applied to the $\{0, 1\}$ valued detected lane marking matrix $D = \{d_{ij}\}$. 
+
+Consider $D$ as a mapping from plane $(i, j) \in \{1, \cdots, 320\} \times \{1, \cdots, 160\}$ to $\{0, 1\}$. The Hough Transformation builds a new mapping $H$ from plane $(\sigma_k, \rho_l) \in [-\frac{\pi}{2}, \frac{\pi}{2}] \times [-320\sqrt{2}, 320\sqrt{2}]$ to $\mathbb{N}^+$, where the latter plane is discretized as $\{(\sigma_k, \rho_l): k = 1, \cdots, K; l = 1, \cdots, L \}$ and each point $(\sigma_k, \rho_l)$ represents for a line $\{(x, y)\in [0, 320] \times [0, 160]: \rho_l = x\cos\sigma_k + y\sin\sigma_k\}$. The deteiled steps are as follows. 
+
+For each $d_{ij}$ valued $1$, for all $\sigma_k$, we solve for $\rho$ such that $\rho = i \cos \sigma_k + j \sin \sigma_k$. Then we round $\rho$ to the closest $\rho_l$. Increment $H(k, l)$. Then we build the transformed matrix $H = \{H(k, l): (k,l) \in \{1, \cdots, K\}\times\{1, \cdots, L\}\}$. 
+
+Such procedure ensures that for each entry in the transformed matrix, $H(k, l) = n \in \mathbb{N}^+$  implies there are $n$ colinear points with value $1$ on the line  $\{(x, y)\in [0, 320] \times [0, 160]: \rho_l = x\cos\sigma_k + y\sin\sigma_k\}$. Therefore lines with higher values in $H$, i.e. the Hough lines, are collected. 
 
 
 \subsection*{Vanishing points prediction}
 
-A vanishing point in a picture is the intersection of a set of lines that are actually parallel in the real space. Our goal is to detect the vanishing point corresponding to the principal direction of the image, which we believe should unveil much information for an appropriate steering angle.
+A vanishing point in a picture is the intersection of a set of lines that are actually parallel in the real space. Our goal is to detect the vanishing point corresponding to the principal direction of the image, which we believe should unveil much information for an appropriate steering angle. 
 
-The first step is collecting line segments from the $\{0, 1\}$ valued lane marking matrix. Hough transformation, as one of the typical tools for line identification, is applied to the matrix. Such transformation will map all possible lines from the original matrix into entries of a new matrix. The value at each entry of the new matrix represents the "voting" information from the original image, that is, how many $1$-valued points in the original matrix intersect with the line corresponding to this specific entry. Lines with higher corresponding values in the new matrix, i.e. the Hough lines, are collected. 
+For example, center of all the intersections of Hough lines could possibly be a solution. Further effort for robustness is discussed in the next section. 
 
-The second step is predicting the vanishing points with the collected lines. For example, center of all the intersections of those lines could possibly be a solution. But further effort is required for more robust results. 
+\begin{figure}[!ht]
+  \centering
+      \includegraphics[width=0.9\textwidth]{Rplot2.png}
+      
+{\footnotesize Vanishing point is predicted in a robust manner using Hough lines from the detected lane markings. The upper 25 rows of pixels are discarded. Hough lines are collected from left and right parts seperately; Only eligible intersections (small yellow dots) are counted for the final prediction. \par}  \caption{\textit{Robust vanishing point prediction} based on detected lane markings. }
+
+\end{figure}
+
+
 
 \subsection*{Improvements on robustness}
 
@@ -98,18 +157,11 @@ Kalman filter is one of such techniques that allows us to better estimate the mo
 
 We applied the Kalman filter to the series of crude prediction of vanishing points in a real time manner. Therefore the stablized prediction filtered by all the previous points will be our best guess for the vanishing point. 
 
-\begin{figure}[!ht]
-  \centering
-      \includegraphics[width=0.9\textwidth]{Rplot2.png} 
-  \caption{\textit{Robust prediction of vanishing point}}
-\end{figure}
-
-Note here that: 1. The upper 25 rows of pixels are discarded; 2. Hough lines are collected from left and right parts seperately; 3. only eligible intersections (small yellow dots) are counted for the final prediction;
 
 
-\subsection*{Evaluate vanishing point as a predictor for steering angle}
+\subsection*{Steering angle prediction model}
 
-A steering angle prediction model is fitted on the training set using the vanishing point results above. 
+Based on the prediction for vanishing points, we further build a prediction model for steering angle. 
 
 Suppose the training set includes $T$ time points of video and log data. At each time point $t \in \{1, \cdots, T\}$, we have predicted vanishing point $V(t) = (V_x(t), V_y(t))$. We collect speed $S(t)$ and steering angle $A(t)$. We assume that there exists a prediction model $f$ for the appropriate steering angle $A$:
 $$
@@ -117,22 +169,29 @@ f(V_x(t-1), V_y(t-1), S(t-1)) = A(t).
 $$
 We expect that the model is approximately estimable in reality and could be fitted with default random forest algorithm. 
 
-The accuracy of prediction is then calculated on the test set. The importance of predictors are also reported. 
+\subsection*{Random forests}
+
+We use random forests for fitting the steering angle prediction model and evaluating the importance of vanishing point. 
+
+An 100 seconds video and its corresponding driving data is selected from the driving records starting at 11:46:01 on June 8th, 2016 (time points 11000-13000, 20 time points per second) in the dataset shared by comma.ai. A test set of 70 seconds driving data is clipped from the driving records on the same day (time points 13001-14400). The selection of training and test sets is rather arbitrary but requiring the driving condition to be following traffic on highway at daytime. 
+
+At each time point $t$, the inputs for the random forests are the speed $S(t-1)$ and the predicted vanishing point $V(t-1) = (V_x(t-1), V_y(t-1))$ at the previous time point. The output of the random forests is the steering angle $A(t)$ at the current time point. 
+
+The steering angle prediction model $
+f(V_x(t-1), V_y(t-1), S(t-1)) = A(t)
+$ is then fitted on the training set. We collected the predicted steering angles on training and test sets, compared them to the actual steering angles, to calculate the training and test root mean square errors. Total decreases in node impurity are collected for each of the input variables as the common measurement for the variable importance in the prediction model. 
 
 The reason we use random forest algorithm is that it handles overfitting and also provides information on importance of predictors. 
 
+
+
 \section*{Results}
 
-From files "./camera/2016-06-08--11-46-01.h5" and "./log/2016-06-08--11-46-01.h5", we clipped a training set of $100$ seconds (tiem points 11000-13000) and a test set of $70$ seconds (time points 13001-14400). Both are of daytime highway driving records under normal weather condition. 
+On the training set, the steering angle prediction model is fitted. Root mean square error (RMSE) is 5.05 on the training set and 2.11 on the test set. The mean and standard deviation of the actual steering angle records (in a format of mean(sd)) are -0.05(5.6) on the training set and -0.24(2.97) on the testing set. 
 
-Vanishing points $V(t) = (V_x(t), V_y(t))$ are estimated for all time points of interest. Speed $S(t)$ and steering angle $A(t)$ are also collected. 
+The reported importance measurements (total decrease in node impurity) are 0 for speed $S$, 21586.85 and 5199.42 for the two components $V_x$ and $V_y$ of the vanishing points. The results imply that vanishing point is the most important predictor for this model. 
 
-
-On the training set, the prediction model for steering angle is fitted, reporting root mean square error (RMSE) for steering angle prediction of 5.05 on the training set and 2.11 on the test set. The mean and standard error of the original steering angle records (in a format of mean(sd)) are -0.05(5.6) on the training set and -0.24(2.97) on the testing set. 
-
-The reported importance measurement (total decrease in node impurity) for speed $S$ and two components $V_x$ and $V_y$ of the vanishing points are 0, 21486.95 and 5199.43, suggesting that vanishing point is the most important predictor for this model. 
-
-The result is also visualized using the speed, the steering angle record (in blue), the predicted steering angle (in green). The formula and mechanical parameters for visualization are cited from the code shared by comma.ai \cite{github}. Links for our visualized results are:
+The result is also visualized using the speed, the steering angle record (in blue), the predicted steering angle (in green). The formula and mechanical parameters for visualization are cited from the code shared by comma.ai \cite{github}. Links:
 
 \href{https://youtu.be/E4DUmLJFs_c}{test}
 \begin{verbatim}
@@ -148,17 +207,12 @@ https://youtu.be/p2RmdN7Chl0
 \begin{figure}[!ht]
   \centering
       \includegraphics[width=0.9\textwidth]{Rplot3.png} 
-  \caption{\textit{Visualization} of vanishing point (red), recorded direction (green) and predicted direction (blue)}
+  \caption{\textit{Visualization} of predicted vanishing point (red), actual direction (green) and predicted direction (blue)}
 \end{figure}
 
 
 \section*{Discussions}
 
-\subsection*{Limitation of video data}
-
-Although comma.ai claims that a well designed deep learning algorithm will be able to completely mimic human driving -- using only image data, we argue that it is actually unrealistic. There are at least two more features that human can take advantage of but a camera cannot: 1. moving parallax allows human to estimate distance by slightly moving their heads since the closer objects moving faster on the retina; 2. human actually have stereo vision from two eyes which is benefitial for distance estimation. Therefore using solely video data -- no matter how advanced the algorithm is -- must have a limit in accuracy of mimicing human drivers whereas an ultimate self-driving car has very little tolerance for error in many circumstances. 
-
-Instead of spending all effort in image processing, we simplify the process so that the spare computational power could be used for other elements of the driving model. 
 
 \subsection*{Role of current model and its limitations}
 
@@ -176,11 +230,6 @@ Transforming the road image to bird's eye view might help improve the accuracy a
 
 A stabler tracking algorithm of lane markings could be built using particle filter but it might compromise in computational efficiency. 
 
-
-A possible blueprint for an integrated self-driving system could be built by:\\
-1. A tool for following traffic (current model); \\
-2. An immediate reponse system processing emergent information such as important traffic signs or lanes detected, route instructions received from gps, or signals received from a collision advoidance system. \\
-3. An Artifitial Intelligence system for more arbitrary decisions such as optional lane changes and acceleration. 
 
 
 

@@ -178,6 +178,41 @@ points(point[1]+0.5, point[2], pch = 19, col = "red")
 # plot the prediction of vanishing point
 
 # code for figure 2
+
+temp.M <- extract.image(result)
+temp.MM <- (temp.M > quantile(temp.M, 0.9))*1
+show.image(make.image(temp.MM))
+temp <- which(temp.MM == 1, arr.ind = T)
+temp1 <- temp[(temp[,2] <= 160)&(temp[,1] <=160), ]
+# lane markings on the left
+temp2 <- temp[(temp[,2] <= 160)&(temp[,1] >160), ]
+# lane markings on the right
+
+P <- matrix(0, 320, 320)
+P[temp] <- 1
+p <- P
+length.row <- nrow(p)
+abc=hough(p)
+houghParam<-unlist(abc$Header)
+image(p,main="Hough lines (blue) and vanishing point (red)", col = gray(c(0, 1)))
+P1 <- matrix(0, 320, 320)
+P1[temp1] <- 1
+getLineHough_plotline_blue(P1)
+P2 <- matrix(0, 320, 320)
+P2[temp2] <- 1
+getLineHough_plotline_blue(P2)
+# plot the Hough lines from both parts
+
+point <- get.vanishing.point(k)
+AAA <- get.vanishing.point.plot(k)
+AAAA <- cbind(1-AAA[,1], AAA[,2] - 0.5)
+points(AAAA[!is.na(AAAA[,1]),1], AAAA[!is.na(AAAA[,1]),2], pch = 20, col = "yellow", cex = 0.2)
+# plot the eligible intersections
+points(point[1]+0.5, point[2], pch = 19, col = "red")
+# plot the prediction of vanishing point
+
+# code for figure 2
+
 ```
 
 # 4. Improvements of Robustness & Prediction of steering angle with random forest
