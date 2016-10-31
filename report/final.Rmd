@@ -45,21 +45,31 @@ source(file.path("code", "hough.R"))
 
 # dataset was downloaded in advance using code get_data.sh shared by comma.ai on Sept 19, 2016
 
-log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
-image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
-log_names <- list.datasets(log, recursive = TRUE)
-image_names <- list.datasets(image, recursive = TRUE)
+# log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
+# image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
+# log_names <- list.datasets(log, recursive = TRUE)
+# image_names <- list.datasets(image, recursive = TRUE)
 
-temp <- log[log_names[28]]@dim
-speed <- log[log_names[28]][1:temp]
-rm(temp)
-temp <- log[log_names[35]]@dim
-angle <- log[log_names[35]][1:temp]
-rm(temp)
-angle <- angle/10
-temp <- log[log_names[13]]@dim
-timeline_image <- log[log_names[13]][1:temp]
-rm(temp)
+
+# temp <- log[log_names[28]]@dim
+# speed <- log[log_names[28]][1:temp]
+# rm(temp)
+# temp <- log[log_names[35]]@dim
+# angle <- log[log_names[35]][1:temp]
+# rm(temp)
+# angle <- angle/10
+# temp <- log[log_names[13]]@dim
+# timeline_image <- log[log_names[13]][1:temp]
+# rm(temp)
+
+# saveRDS(speed, file.path("temp", "speed.rds"))
+# saveRDS(angle, file.path("temp", "angle.rds"))
+# saveRDS(timeline_image, file.path("temp", "timeline_image.rds"))
+
+speed <- readRDS(file.path("temp", "speed.rds"))
+angle <- readRDS(file.path("temp", "angle.rds"))
+timeline_image <- readRDS(file.path("temp", "timeline_image.rds"))
+
 
 hist(speed)
 hist(angle)
@@ -72,9 +82,12 @@ index_test <- 13001:14400
 #2. Dynamic lane markings detection
 
 ```{r Dynamic lane markings detection, code for Figure 1}
-i <- 595
-k <- index_train[i]
-image_use <- (as.cimg(aperm(image[image_names][k,,,], c(4,3,1,2))))
+# i <- 595
+# k <- index_train[i]
+# image_temp_1 <- image[image_names][k,,,]
+# saveRDS(image_temp_1, file.path("temp", "image_temp_1.rds"))
+image_temp_1 <- readRDS(file.path("temp", "image_temp_1.rds"))
+image_use <- (as.cimg(aperm(image_temp_1, c(4,3,1,2))))
 # the original image 1
 result <- edges( make.image(image_use[,160:1,1,]), type = "Robertcross")
 result <- rgb2grey(result)
@@ -90,12 +103,15 @@ temp.MM[,135:160] <- 0
 show.image(make.image(temp.MM))
 # use 97% quantile threshold to extract lane markings
 
-log_2 <- H5File(file.path("comma-dataset", "log", "2016-02-11--21-32-47.h5"))
-image_2 <- H5File(file.path("comma-dataset", "camera", "2016-02-11--21-32-47.h5"))
-log_names_2 <- list.datasets(log_2, recursive = TRUE)
-image_names_2 <- list.datasets(image_2, recursive = TRUE)
-k2 <- 3000
-image_use_2 <- (as.cimg(aperm(image_2[image_names_2][k2,,,], c(4,3,1,2))))
+# log_2 <- H5File(file.path("comma-dataset", "log", "2016-02-11--21-32-47.h5"))
+# image_2 <- H5File(file.path("comma-dataset", "camera", "2016-02-11--21-32-47.h5"))
+# log_names_2 <- list.datasets(log_2, recursive = TRUE)
+# image_names_2 <- list.datasets(image_2, recursive = TRUE)
+# k2 <- 3000
+# image_temp_2 <- image_2[image_names_2][k2,,,]
+# saveRDS(image_temp_2, file.path("temp", "image_temp_2.rds"))
+image_temp_2 <- readRDS(file.path("temp", "image_temp_2.rds"))
+image_use_2 <- (as.cimg(aperm(image_temp_2, c(4,3,1,2))))
 result_2 <- edges( make.image(image_use_2[,160:1,1,]), type = "Robertcross")
 result_2 <- rgb2grey(result_2)
 plot(image_use_2)
