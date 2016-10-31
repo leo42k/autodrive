@@ -45,21 +45,31 @@ source(file.path("code", "hough.R"))
 
 # dataset was downloaded in advance using code get_data.sh shared by comma.ai on Sept 19, 2016
 
-log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
-image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
-log_names <- list.datasets(log, recursive = TRUE)
-image_names <- list.datasets(image, recursive = TRUE)
+# log <- H5File(file.path("comma-dataset", "log", "2016-06-08--11-46-01.h5"))
+# image <- H5File(file.path("comma-dataset", "camera", "2016-06-08--11-46-01.h5"))
+# log_names <- list.datasets(log, recursive = TRUE)
+# image_names <- list.datasets(image, recursive = TRUE)
 
-temp <- log[log_names[28]]@dim
-speed <- log[log_names[28]][1:temp]
-rm(temp)
-temp <- log[log_names[35]]@dim
-angle <- log[log_names[35]][1:temp]
-rm(temp)
-angle <- angle/10
-temp <- log[log_names[13]]@dim
-timeline_image <- log[log_names[13]][1:temp]
-rm(temp)
+
+# temp <- log[log_names[28]]@dim
+# speed <- log[log_names[28]][1:temp]
+# rm(temp)
+# temp <- log[log_names[35]]@dim
+# angle <- log[log_names[35]][1:temp]
+# rm(temp)
+# angle <- angle/10
+# temp <- log[log_names[13]]@dim
+# timeline_image <- log[log_names[13]][1:temp]
+# rm(temp)
+
+# saveRDS(speed, file.path("temp", "speed.rds"))
+# saveRDS(angle, file.path("temp", "angle.rds"))
+# saveRDS(timeline_image, file.path("temp", "timeline_image.rds"))
+
+speed <- readRDS(file.path("temp", "speed.rds"))
+angle <- readRDS(file.path("temp", "angle.rds"))
+timeline_image <- readRDS(file.path("temp", "timeline_image.rds"))
+
 
 hist(speed)
 hist(angle)
@@ -72,9 +82,12 @@ index_test <- 13001:14400
 #2. Dynamic lane markings detection
 
 ```{r Dynamic lane markings detection, code for Figure 1}
-i <- 595
-k <- index_train[i]
-image_use <- (as.cimg(aperm(image[image_names][k,,,], c(4,3,1,2))))
+# i <- 595
+# k <- index_train[i]
+# image_temp_1 <- image[image_names][k,,,]
+# saveRDS(image_temp_1, file.path("temp", "image_temp_1.rds"))
+image_temp_1 <- readRDS(file.path("temp", "image_temp_1.rds"))
+image_use <- (as.cimg(aperm(image_temp_1, c(4,3,1,2))))
 # the original image 1
 result <- edges( make.image(image_use[,160:1,1,]), type = "Robertcross")
 result <- rgb2grey(result)
@@ -90,12 +103,15 @@ temp.MM[,135:160] <- 0
 show.image(make.image(temp.MM))
 # use 97% quantile threshold to extract lane markings
 
-log_2 <- H5File(file.path("comma-dataset", "log", "2016-02-11--21-32-47.h5"))
-image_2 <- H5File(file.path("comma-dataset", "camera", "2016-02-11--21-32-47.h5"))
-log_names_2 <- list.datasets(log_2, recursive = TRUE)
-image_names_2 <- list.datasets(image_2, recursive = TRUE)
-k2 <- 3000
-image_use_2 <- (as.cimg(aperm(image_2[image_names_2][k2,,,], c(4,3,1,2))))
+# log_2 <- H5File(file.path("comma-dataset", "log", "2016-02-11--21-32-47.h5"))
+# image_2 <- H5File(file.path("comma-dataset", "camera", "2016-02-11--21-32-47.h5"))
+# log_names_2 <- list.datasets(log_2, recursive = TRUE)
+# image_names_2 <- list.datasets(image_2, recursive = TRUE)
+# k2 <- 3000
+# image_temp_2 <- image_2[image_names_2][k2,,,]
+# saveRDS(image_temp_2, file.path("temp", "image_temp_2.rds"))
+image_temp_2 <- readRDS(file.path("temp", "image_temp_2.rds"))
+image_use_2 <- (as.cimg(aperm(image_temp_2, c(4,3,1,2))))
 result_2 <- edges( make.image(image_use_2[,160:1,1,]), type = "Robertcross")
 result_2 <- rgb2grey(result_2)
 plot(image_use_2)
@@ -178,6 +194,41 @@ points(point[1]+0.5, point[2], pch = 19, col = "red")
 # plot the prediction of vanishing point
 
 # code for figure 2
+
+temp.M <- extract.image(result)
+temp.MM <- (temp.M > quantile(temp.M, 0.9))*1
+show.image(make.image(temp.MM))
+temp <- which(temp.MM == 1, arr.ind = T)
+temp1 <- temp[(temp[,2] <= 160)&(temp[,1] <=160), ]
+# lane markings on the left
+temp2 <- temp[(temp[,2] <= 160)&(temp[,1] >160), ]
+# lane markings on the right
+
+P <- matrix(0, 320, 320)
+P[temp] <- 1
+p <- P
+length.row <- nrow(p)
+abc=hough(p)
+houghParam<-unlist(abc$Header)
+image(p,main="Hough lines (blue) and vanishing point (red)", col = gray(c(0, 1)))
+P1 <- matrix(0, 320, 320)
+P1[temp1] <- 1
+getLineHough_plotline_blue(P1)
+P2 <- matrix(0, 320, 320)
+P2[temp2] <- 1
+getLineHough_plotline_blue(P2)
+# plot the Hough lines from both parts
+
+point <- get.vanishing.point(k)
+AAA <- get.vanishing.point.plot(k)
+AAAA <- cbind(1-AAA[,1], AAA[,2] - 0.5)
+points(AAAA[!is.na(AAAA[,1]),1], AAAA[!is.na(AAAA[,1]),2], pch = 20, col = "yellow", cex = 0.2)
+# plot the eligible intersections
+points(point[1]+0.5, point[2], pch = 19, col = "red")
+# plot the prediction of vanishing point
+
+# code for figure 2
+
 ```
 
 # 4. Improvements of Robustness & Prediction of steering angle with random forest
@@ -293,3 +344,9 @@ saveVideo(for (i in 1:length(index_train)) {
 }, "train.mp4", interval = 0.05)
 
 ```
+
+
+# Visualization
+
+[test](https://www.youtube.com/watch?v=E4DUmLJFs_c&feature=youtu.be)
+[train](https://www.youtube.com/watch?v=p2RmdN7Chl0&feature=youtu.be)
