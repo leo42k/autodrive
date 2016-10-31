@@ -170,30 +170,6 @@ P[temp2] <- 1
 getLineHough_plot(P)
 # the Hough transformation for the right part
 
-P <- matrix(0, 320, 320)
-P[temp] <- 1
-p <- P
-length.row <- nrow(p)
-abc=hough(p)
-houghParam<-unlist(abc$Header)
-image(p,main="Hough lines (blue) and vanishing point (red)", col = gray(c(0, 1)))
-P1 <- matrix(0, 320, 320)
-P1[temp1] <- 1
-getLineHough_plotline_blue(P1)
-P2 <- matrix(0, 320, 320)
-P2[temp2] <- 1
-getLineHough_plotline_blue(P2)
-# plot the Hough lines from both parts
-
-point <- get.vanishing.point(k)
-AAA <- get.vanishing.point.plot(k)
-AAAA <- cbind(1-AAA[,1], AAA[,2] - 0.5)
-points(AAAA[!is.na(AAAA[,1]),1], AAAA[!is.na(AAAA[,1]),2], pch = 20, col = "yellow", cex = 0.2)
-# plot the eligible intersections
-points(point[1]+0.5, point[2], pch = 19, col = "red")
-# plot the prediction of vanishing point
-
-# code for figure 2
 
 temp.M <- extract.image(result)
 temp.MM <- (temp.M > quantile(temp.M, 0.9))*1
@@ -219,8 +195,12 @@ P2[temp2] <- 1
 getLineHough_plotline_blue(P2)
 # plot the Hough lines from both parts
 
-point <- get.vanishing.point(k)
-AAA <- get.vanishing.point.plot(k)
+# point <- get.vanishing.point(k)
+# saveRDS(point, file.path("temp", "point.rds"))
+point <- readRDS(file.path("temp", "point.rds"))
+# AAA <- get.vanishing.point.plot(k)
+# saveRDS(AAA, file.path("temp", "AAA.rds"))
+AAA <- readRDS(file.path("temp", "AAA.rds"))
 AAAA <- cbind(1-AAA[,1], AAA[,2] - 0.5)
 points(AAAA[!is.na(AAAA[,1]),1], AAAA[!is.na(AAAA[,1]),2], pch = 20, col = "yellow", cex = 0.2)
 # plot the eligible intersections
@@ -313,9 +293,12 @@ importance(model)
 
 # code for the results
 
-i <- 500
-k <- index_train[i]
-plot(as.cimg(aperm(image[image_names][k,,,], c(4,3,1,2))))
+ i <- 500
+# k <- index_train[i]
+# BBB <- image[image_names][k,,,]
+# saveRDS(BBB, file.path("temp", "BBB.rds"))
+BBB <- readRDS(file.path("temp", "BBB.rds"))
+plot(as.cimg(aperm(BBB, c(4,3,1,2))))
 draw_path_on(speed_ms = set_train[i, 2], angle_steers = set_train[i,1], color = "blue")
 draw_path_on(speed_ms = set_train[i, 2], angle_steers = predicted.angle.train[i], color = "green")
 points((set_train[i,3] + 0.5) * 320, 160 - ((set_train[i,4] + 0.5) * 320 - 160), col = "red", pch=19, cex=1.5)

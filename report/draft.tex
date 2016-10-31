@@ -108,7 +108,7 @@ The $97\%$ threshold is rather arbitrary for the similar consideration of comput
 \begin{figure}[!ht] 
   \centering
       \includegraphics[width=0.9\textwidth]{Rplot1.png} 
-  \caption{ \textit{Dynamic 97\% quantile thresholding} after \textit{Roberts cross filtering} handles different lighting conditions for lane markings detection. From left to right, figures are the original image, filtered image by Roberts cross operator (the edge detector) based on greyscale image (omitted) and the 97\% quantile thresholded image for lane markings. The first and the second rows process a daytime image and a nighttime image seperately. }
+  \caption{ \textit{Dynamic 97\% quantile thresholding} after \textit{Roberts cross filtering} handles different lighting conditions for lane markings detection. From left to right, figures are the original image, filtered image by Roberts cross operator (the edge detector) based on greyscale images (omitted) and the 97\% quantile thresholded image for lane markings. The first and the second rows process a daytime image and a nighttime image seperately. }
   \label{fig:Figure 1}
 \end{figure}
 
@@ -147,7 +147,7 @@ The Hough transformation and such searching process are relatively sensitive to 
 
 First of all, the upper 25 rows of pixels are re-valued as $0$ because they are usually related to the sky and provide no information for direction. 
 
-Second, we partition the left lane marking matrix evenly into the left part and the right part and then search Hough lines seperately. Even if points are dense in one side of the matrix due to some noise, we can still balance it with the information from the other part so that we are able to find a prediction closer to the real principal direction. The prediction will be given using the intersections of Hough lines from both parts. 
+Second, we partition the lane marking matrix $D$ evenly into the left part and the right part and then search Hough lines seperately. Even if points are dense in one side of the matrix due to some noise, we can still balance it with the information from the other part so that we are able to find a prediction closer to the real principal direction. The prediction will be given using the intersections of Hough lines from both parts. 
 
 Third, we only collect the intersection of a pair of Hough lines if the difference of their slopes is greater than $0.2$. If such process finds no eligible intersection, we let vanishing point locate at the center. 
 
