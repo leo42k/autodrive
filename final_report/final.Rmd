@@ -293,9 +293,12 @@ importance(model)
 
 # code for the results
 
-i <- 500
-k <- index_train[i]
-plot(as.cimg(aperm(image[image_names][k,,,], c(4,3,1,2))))
+ i <- 500
+# k <- index_train[i]
+# BBB <- image[image_names][k,,,]
+# saveRDS(BBB, file.path("temp", "BBB.rds"))
+BBB <- readRDS(file.path("temp", "BBB.rds"))
+plot(as.cimg(aperm(BBB, c(4,3,1,2))))
 draw_path_on(speed_ms = set_train[i, 2], angle_steers = set_train[i,1], color = "blue")
 draw_path_on(speed_ms = set_train[i, 2], angle_steers = predicted.angle.train[i], color = "green")
 points((set_train[i,3] + 0.5) * 320, 160 - ((set_train[i,4] + 0.5) * 320 - 160), col = "red", pch=19, cex=1.5)
